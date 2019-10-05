@@ -45,6 +45,7 @@ def get_credentials():
 def cleaner(args):
     remove_emails_older_than = args.age
     remove_starred = args.starred
+    verbose = args.verbose
 
     service = build('gmail', 'v1', credentials=get_credentials())
 
@@ -88,6 +89,12 @@ def cleaner(args):
         today = datetime.now()
         x_days_ago = today - timedelta(days=remove_emails_older_than)
 
+        try:
+            msg_subject = [i['value'] for i in msg['payload']['headers'] if
+                           i['name'] == 'Subject'][0]
+        except IndexError:
+            msg_subject = email_id
+
         if remove_starred:
             remove_starred_cond = 'STARRED' not in msg['labelIds']
         else:
@@ -108,10 +115,10 @@ def cleaner(args):
                        body={'removeLabelIds': ['INBOX', 'UNREAD'],
                              'addLabelIds': []}). \
                 execute()
-            print('{} marked as read and archived. '.format(email_id))
-        # else:
-        #     print('{} is marked as important or too young. Skipped.'.format(
-        #     email_id))
+            print('"{}" marked as read and archived. '.format(msg_subject))
+        elif verbose:
+            print('"{}" marked as important or too young. Skipped.'.format(
+                msg_subject))
 
 
 def main():
@@ -120,7 +127,9 @@ def main():
                         help='Archive e-mails older than x days.')
     parser.add_argument('--starred', dest='starred', action='store_true',
                         help="Keep starred e-mails.")
-    parser.set_defaults(starred=False)
+    parser.add_argument('--verbose', dest='verbose', action='store_true',
+                        help="More output of the actions done by the cleaner.")
+    parser.set_defaults(starred=False, verbose=False)
     args = parser.parse_args()
     cleaner(args)
 

@@ -14,3 +14,4 @@ Automatically archive and mark as read the e-mails on your inbox
       -h, --help  show this help message and exit
       --age AGE   Archive e-mails older than x days.
       --starred   Keep starred e-mails.
+      --verbose   More output of the actions done by the cleaner.
