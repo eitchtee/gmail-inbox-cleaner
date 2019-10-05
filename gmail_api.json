@@ -1,0 +1,14 @@
+{
+  "installed": {
+    "client_id": "430231831500-ahripnkn99qs4les5irlagt3poll0kme.apps.googleusercontent.com",
+    "project_id": "gmail-inbox-cleaner-255004",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "04kVfAGd6Mfb-QiEjHYk1Aov",
+    "redirect_uris": [
+      "urn:ietf:wg:oauth:2.0:oob",
+      "http://localhost"
+    ]
+  }
+}
