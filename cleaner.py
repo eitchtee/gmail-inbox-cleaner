@@ -47,6 +47,9 @@ def cleaner(args):
     remove_starred = args.starred
     verbose = args.verbose
 
+    if verbose:
+        print("Logging in...")
+
     service = build('gmail', 'v1', credentials=get_credentials())
 
     # Call the Gmail API
@@ -71,13 +74,17 @@ def cleaner(args):
             else:
                 appending = False
 
+    if verbose:
+        print("Logged...")
+        print('Fetching e-mails...')
+
     emails_ids = []
     for request in results_list:
         try:
             for thread in request['messages']:
                 emails_ids.append(thread['id'])
         except KeyError:
-            print('No e-mails.')
+            print('No e-mails found.')
             return
 
     print('{} e-mails found on your inbox.\n'.format(
@@ -90,9 +97,11 @@ def cleaner(args):
         x_days_ago = today - timedelta(days=remove_emails_older_than)
 
         try:
+            # Get e-mail subject from the mensage payload.
             msg_subject = [i['value'] for i in msg['payload']['headers'] if
                            i['name'] == 'Subject'][0]
         except IndexError:
+            # If subject is not present, use e-mail id.
             msg_subject = email_id
 
         if remove_starred:
