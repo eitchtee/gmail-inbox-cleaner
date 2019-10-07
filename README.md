@@ -7,11 +7,12 @@ Automatically archive and mark as read the e-mails on your inbox
 1. Run `pip install -r requirements.txt` (virtualenv is recommended)
 1. Run `python cleaner.py`
 
+```
+usage: cleaner.py [-h] [--age AGE] [--starred]
 
-    usage: cleaner.py [-h] [--age AGE] [--starred]
-    
-    optional arguments:
-      -h, --help  show this help message and exit
-      --age AGE   Archive e-mails older than x days.
-      --starred   Keep starred e-mails.
-      --verbose   More output of the actions done by the cleaner.
+optional arguments:
+  -h, --help  show this help message and exit
+  --age AGE   Archive e-mails older than x days.
+  --starred   Keep starred e-mails.
+  --verbose   More output of the actions done by the cleaner.
+```
