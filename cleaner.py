@@ -46,6 +46,13 @@ def cleaner(args):
     remove_emails_older_than = args.age
     remove_starred = args.starred
     verbose = args.verbose
+    archive = args.archive
+    mark_as_read = args.mark_as_read
+
+    if not archive and not mark_as_read:
+        print("Don't archive and don't mark as read both set to true. "
+              "Nothing left to do.")
+        return
 
     if verbose:
         print("Logging in...")
@@ -117,28 +124,65 @@ def cleaner(args):
             remove_emails_older_than_cond = True
 
         if remove_starred_cond and remove_emails_older_than_cond:
-            archive_run = service.users(). \
-                messages(). \
-                modify(userId='me',
-                       id=email_id,
-                       body={'removeLabelIds': ['INBOX', 'UNREAD'],
-                             'addLabelIds': []}). \
-                execute()
-            print('"{}" marked as read and archived. '.format(msg_subject))
+            if not archive and mark_as_read:
+                gmail_run = service.users(). \
+                    messages(). \
+                    modify(userId='me',
+                           id=email_id,
+                           body={'removeLabelIds': ['UNREAD'],
+                                 'addLabelIds': []}). \
+                    execute()
+                print('"{}" marked as read.'.format(msg_subject))
+            elif not mark_as_read and archive:
+                gmail_run = service.users(). \
+                    messages(). \
+                    modify(userId='me',
+                           id=email_id,
+                           body={'removeLabelIds': ['INBOX'],
+                                 'addLabelIds': []}). \
+                    execute()
+                print('"{}" archived.'.format(msg_subject))
+
+            else:
+                gmail_run = service.users(). \
+                    messages(). \
+                    modify(userId='me',
+                           id=email_id,
+                           body={'removeLabelIds': ['INBOX', 'UNREAD'],
+                                 'addLabelIds': []}). \
+                    execute()
+                print('"{}" marked as read and archived.'.format(msg_subject))
+
         elif verbose:
-            print('"{}" marked as important or too young. Skipped.'.format(
-                msg_subject))
+            if not remove_starred_cond and not remove_emails_older_than_cond:
+                print('"{}" is starred and too young. Skipped.'.format(
+                    msg_subject))
+            elif not remove_starred_cond and remove_emails_older_than_cond:
+                print('"{}" is too young. Skipped.'.format(
+                    msg_subject))
+            elif remove_starred_cond and not remove_emails_older_than_cond:
+                print('"{}" is starred. Skipped.'.format(
+                    msg_subject))
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--age', type=int, default=30,
-                        help='Archive e-mails older than x days.')
+                        help='Act on e-mails older than x days. Defaults to '
+                             '30.')
     parser.add_argument('--starred', dest='starred', action='store_true',
                         help="Keep starred e-mails.")
     parser.add_argument('--verbose', dest='verbose', action='store_true',
                         help="More output of the actions done by the cleaner.")
-    parser.set_defaults(starred=False, verbose=False)
+    parser.add_argument('--no_archive', dest='archive', action='store_false',
+                        help="Don't archive e-mails that met the criteria.")
+    parser.add_argument('--no_read', dest='mark_as_read', action='store_false',
+                        help="Don't mark e-mails that met the criteria as "
+                             "read.")
+    parser.set_defaults(starred=False,
+                        verbose=False,
+                        archive=True,
+                        mark_as_read=True)
     args = parser.parse_args()
     cleaner(args)
 
