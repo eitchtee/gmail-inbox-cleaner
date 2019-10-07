@@ -59,6 +59,10 @@ def cleaner(args):
 
     service = build('gmail', 'v1', credentials=get_credentials())
 
+    if verbose:
+        print("Logged...")
+        print('Fetching e-mails...')
+
     # Call the Gmail API
     results_list = []
     results = service.users().messages().list(userId='me',
@@ -81,10 +85,6 @@ def cleaner(args):
             else:
                 appending = False
 
-    if verbose:
-        print("Logged...")
-        print('Fetching e-mails...')
-
     emails_ids = []
     for request in results_list:
         try:
@@ -94,8 +94,9 @@ def cleaner(args):
             print('No e-mails found.')
             return
 
-    print('{} e-mails found on your inbox.\n'.format(
+    print('--- {} e-mails found on your inbox.\n'.format(
         len(emails_ids)))
+    count = 0
     for email_id in emails_ids:
         msg = service.users().messages().get(id=email_id,
                                              userId='me').execute()
@@ -153,6 +154,8 @@ def cleaner(args):
                     execute()
                 print('"{}" marked as read and archived.'.format(msg_subject))
 
+            count += 1
+
         elif verbose:
             if not remove_starred_cond and not remove_emails_older_than_cond:
                 print('"{}" is starred and too young. Skipped.'.format(
@@ -163,6 +166,13 @@ def cleaner(args):
             elif remove_starred_cond and not remove_emails_older_than_cond:
                 print('"{}" is starred. Skipped.'.format(
                     msg_subject))
+
+    if not archive and mark_as_read:
+        print('--- {} e-mails marked as read.'.format(count))
+    elif not mark_as_read and archive:
+        print('--- {} e-mails archived.'.format(count))
+    else:
+        print('--- {} e-mails marked as read and archieved.'.format(count))
 
 
 def main():
