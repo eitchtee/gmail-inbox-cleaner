@@ -108,17 +108,17 @@ def cleaner(args):
             print('No e-mails found.')
             return
 
-    print('{} e-mails found on your inbox.'.format(len(emails_ids)))
+    print('--- {} e-mails found on your inbox.'.format(len(emails_ids)))
 
     labels_to_remove = []
-    archive_print = ''
-    mark_as_read_print = ''
-    if mark_as_read:
-        labels_to_remove.append('UNREAD')
-        mark_as_read_print = 'Marked as read'
-    if archive:
-        labels_to_remove.append('INBOX')
-        archive_print = 'Archieved'
+    labels_to_remove.append('UNREAD') if mark_as_read else None
+    labels_to_remove.append('INBOX') if archive else None
+
+    actions_per_email = []
+    actions_per_email.append('marked as read') \
+        if 'UNREAD' in labels_to_remove else None
+    actions_per_email.append('archieved') \
+        if 'INBOX' in labels_to_remove else None
 
     count = 0
     for email_id in emails_ids:
@@ -165,16 +165,14 @@ def cleaner(args):
         if remove_starred_cond and \
                 remove_emails_older_than_cond and \
                 label_filter_cond:
-            service.users().messages(). \
+            gmail_executor = service.users().messages(). \
                 modify(userId='me',
                        id=email_id,
                        body={
                            'removeLabelIds': labels_to_remove,
                            'addLabelIds': []}).execute()
-            print('{} - {}{}{}'.format(msg_subject,
-                                       mark_as_read_print,
-                                       ' and ' if mark_as_read_print else '',
-                                       archive_print))
+            print('"{}": {}'.format(msg_subject,
+                                    ' and '.join(actions_per_email)))
 
             count += 1
 
