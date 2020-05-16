@@ -89,10 +89,13 @@ def cleaner(args):
         appending = True
         while appending:
             npage_token = results['nextPageToken']
-            results = service.users().messages().list(userId='me',
-                                                      labelIds=['INBOX'],
-                                                      maxResults=500,
-                                                      pageToken=npage_token).execute()
+            results = service.users(). \
+                messages(). \
+                list(userId='me',
+                     labelIds=['INBOX'],
+                     maxResults=500,
+                     pageToken=npage_token).execute()
+
             results_list.append(results)
             if 'nextPageToken' in results.keys():
                 continue
@@ -165,7 +168,7 @@ def cleaner(args):
         if remove_starred_cond and \
                 remove_emails_older_than_cond and \
                 label_filter_cond:
-            gmail_executor = service.users().messages(). \
+            service.users().messages(). \
                 modify(userId='me',
                        id=email_id,
                        body={
