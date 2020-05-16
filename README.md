@@ -9,13 +9,16 @@ Automatically archive and mark as read the e-mails on your inbox
 
 ```
 usage: cleaner.py [-h] [--age AGE] [--starred] [--verbose] [--no_archive]
-                  [--no_read]
+                  [--no_read] [--filter_label LABEL_FILTER]
 
 optional arguments:
-  -h, --help    show this help message and exit
-  --age AGE     Act on e-mails older than x days. Defaults to 30.
-  --starred     Keep starred e-mails.
-  --verbose     More output of the actions done by the cleaner.
-  --no_archive  Don't archive e-mails that met the criteria.
-  --no_read     Don't mark e-mails that met the criteria as read.
+  -h, --help            show this help message and exit
+  --age AGE             Act on e-mails older than x days. Defaults to 30.
+  --starred             Keep starred e-mails.
+  --verbose             More output of the actions done by the cleaner.
+  --no_archive          Don't archive e-mails that met the criteria.
+  --no_read             Don't mark e-mails that met the criteria as read.
+  --filter_label LABEL_FILTER
+                        Only act on e-mails containing this label. Add as many
+                        as you want. Defaults to all.
 ```
