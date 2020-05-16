@@ -48,20 +48,34 @@ def cleaner(args):
     verbose = args.verbose
     archive = args.archive
     mark_as_read = args.mark_as_read
+    label_filter = args.label_filter
+
+    if remove_emails_older_than < 0:
+        print("Age is below 0. Acting on all e-mails.")
+        remove_emails_older_than = 0
 
     if not archive and not mark_as_read:
         print("Don't archive and don't mark as read both set to true. "
-              "Nothing left to do.")
+              "Nothing to do.")
         return
 
-    if verbose:
-        print("Logging in...")
+    print('Acting only on e-mails with one of the following labels: {}'.format(
+        label_filter)) if verbose and label_filter else None
+
+    print("Logging in...") if verbose else None
 
     service = build('gmail', 'v1', credentials=get_credentials())
 
-    if verbose:
-        print("Logged...")
-        print('Fetching e-mails...')
+    print("Logged...") if verbose else None
+    print('Fetching e-mails...') if verbose else None
+
+    labels_dict = {}
+    if label_filter:
+        # Builds a dictionary with labelIds and their respective names
+        labels = service.users().labels().list(userId='me').execute()
+        for label in labels['labels']:
+            if label['type'] == 'user':
+                labels_dict[label['id']] = label['name']
 
     # Call the Gmail API
     results_list = []
@@ -94,8 +108,18 @@ def cleaner(args):
             print('No e-mails found.')
             return
 
-    print('--- {} e-mails found on your inbox.\n'.format(
-        len(emails_ids)))
+    print('{} e-mails found on your inbox.'.format(len(emails_ids)))
+
+    labels_to_remove = []
+    archive_print = ''
+    mark_as_read_print = ''
+    if mark_as_read:
+        labels_to_remove.append('UNREAD')
+        mark_as_read_print = 'Marked as read'
+    if archive:
+        labels_to_remove.append('INBOX')
+        archive_print = 'Archieved'
+
     count = 0
     for email_id in emails_ids:
         msg = service.users().messages().get(id=email_id,
@@ -112,67 +136,67 @@ def cleaner(args):
             # If subject is not present, use e-mail id.
             msg_subject = email_id
 
+        if label_filter:
+            # Checks if the e-email is marked with any of the filter_labels
+            # Returns True once at least one match is found.
+            label_filter_cond = False
+
+            msg_labels = msg['labelIds']
+            for label in msg_labels:
+                label_name = labels_dict.get(label, None)
+                if label_name in label_filter:
+                    label_filter_cond = True
+                    break
+                else:
+                    label_filter_cond = False
+        else:
+            label_filter_cond = True
+
         if remove_starred:
             remove_starred_cond = 'STARRED' not in msg['labelIds']
         else:
             remove_starred_cond = True
-
-        remove_emails_older_than = abs(remove_emails_older_than)
 
         if remove_emails_older_than > 0:
             remove_emails_older_than_cond = msg_date < x_days_ago
         else:
             remove_emails_older_than_cond = True
 
-        if remove_starred_cond and remove_emails_older_than_cond:
-            if not archive and mark_as_read:
-                gmail_run = service.users(). \
-                    messages(). \
-                    modify(userId='me',
-                           id=email_id,
-                           body={'removeLabelIds': ['UNREAD'],
-                                 'addLabelIds': []}). \
-                    execute()
-                print('"{}" marked as read.'.format(msg_subject))
-            elif not mark_as_read and archive:
-                gmail_run = service.users(). \
-                    messages(). \
-                    modify(userId='me',
-                           id=email_id,
-                           body={'removeLabelIds': ['INBOX'],
-                                 'addLabelIds': []}). \
-                    execute()
-                print('"{}" archived.'.format(msg_subject))
-
-            else:
-                gmail_run = service.users(). \
-                    messages(). \
-                    modify(userId='me',
-                           id=email_id,
-                           body={'removeLabelIds': ['INBOX', 'UNREAD'],
-                                 'addLabelIds': []}). \
-                    execute()
-                print('"{}" marked as read and archived.'.format(msg_subject))
+        if remove_starred_cond and \
+                remove_emails_older_than_cond and \
+                label_filter_cond:
+            service.users().messages(). \
+                modify(userId='me',
+                       id=email_id,
+                       body={
+                           'removeLabelIds': labels_to_remove,
+                           'addLabelIds': []}).execute()
+            print('{} - {}{}{}'.format(msg_subject,
+                                       mark_as_read_print,
+                                       ' and ' if mark_as_read_print else '',
+                                       archive_print))
 
             count += 1
 
         elif verbose:
-            if not remove_starred_cond and not remove_emails_older_than_cond:
-                print('"{}" is starred and too young. Skipped.'.format(
-                    msg_subject))
-            elif not remove_starred_cond and remove_emails_older_than_cond:
-                print('"{}" is too young. Skipped.'.format(
-                    msg_subject))
-            elif remove_starred_cond and not remove_emails_older_than_cond:
-                print('"{}" is starred. Skipped.'.format(
-                    msg_subject))
+            # Builds the verbose output for skipping an e-mail based on what
+            # conditions were not met.
+            conditions = []
+            conditions.append('Starred') if not remove_starred_cond else None
+            conditions.append('Too young') \
+                if not remove_emails_older_than_cond else None
+            conditions.append("Doesn't match filtered label") \
+                if not label_filter_cond else None
 
-    if not archive and mark_as_read:
-        print('--- {} e-mails marked as read.'.format(count))
-    elif not mark_as_read and archive:
-        print('--- {} e-mails archived.'.format(count))
-    else:
-        print('--- {} e-mails marked as read and archieved.'.format(count))
+            print('"{}" skipped due to:'
+                  ' {}'.format(msg_subject, '; '.join(conditions)))
+
+    # Builds the final count output based on which
+    # actions the user requested to be done
+    actions = []
+    actions.append('marked as read') if mark_as_read else None
+    actions.append('archieved') if archive else None
+    print('---\n{} e-mails {}'.format(count, ' and '.join(actions)))
 
 
 def main():
@@ -189,10 +213,14 @@ def main():
     parser.add_argument('--no_read', dest='mark_as_read', action='store_false',
                         help="Don't mark e-mails that met the criteria as "
                              "read.")
+    parser.add_argument('--filter_label', dest='label_filter', action='append',
+                        help="Only act on e-mails containing this label. "
+                             "Add as many as you want. Defaults to all.", )
     parser.set_defaults(starred=False,
                         verbose=False,
                         archive=True,
-                        mark_as_read=True)
+                        mark_as_read=True,
+                        label_filter=[], )
     args = parser.parse_args()
     cleaner(args)
 
