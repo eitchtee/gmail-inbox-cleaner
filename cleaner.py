@@ -197,7 +197,7 @@ def cleaner(args):
     actions = []
     actions.append('marked as read') if mark_as_read else None
     actions.append('archieved') if archive else None
-    print('---\n{} e-mails {}'.format(count, ' and '.join(actions)))
+    print('--- {} e-mails {}'.format(count, ' and '.join(actions)))
 
 
 def main():
