@@ -132,7 +132,7 @@ def cleaner(args):
         x_days_ago = today - timedelta(days=remove_emails_older_than)
 
         try:
-            # Get e-mail subject from the mensage payload.
+            # Get e-mail subject from the message payload.
             msg_subject = [i['value'] for i in msg['payload']['headers'] if
                            i['name'] == 'Subject'][0]
         except IndexError:
