@@ -120,7 +120,7 @@ def cleaner(args):
     actions_per_email = []
     actions_per_email.append('marked as read') \
         if 'UNREAD' in labels_to_remove else None
-    actions_per_email.append('archieved') \
+    actions_per_email.append('archived') \
         if 'INBOX' in labels_to_remove else None
 
     count = 0
@@ -196,7 +196,7 @@ def cleaner(args):
     # actions the user requested to be done
     actions = []
     actions.append('marked as read') if mark_as_read else None
-    actions.append('archieved') if archive else None
+    actions.append('archived') if archive else None
     print('--- {} e-mails {}.'.format(count, ' and '.join(actions)))
     print('--- {} e-mails skipped.'.format(len(emails_ids) - count)) if \
         verbose else None
